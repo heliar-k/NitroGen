@@ -14,7 +14,7 @@ dependencies = [
     # Shared
     "numpy",
     "pyzmq",
-    
+
     # Serve
     "torch",
     "pyyaml",
@@ -23,7 +23,7 @@ dependencies = [
     "pydantic",
     "diffusers",
     "polars",
-    
+
     # Play (Windows-only deps marked)
     "pillow",
     "opencv-python",
