@@ -1,25 +1,21 @@
-import time
 import platform
+import time
 
-import pyautogui
 import dxcam
+import psutil
+import pyautogui
 import pywinctl as pwc
+import vgamepad as vg
 import xspeedhack as xsh
 from gymnasium import Env
 from gymnasium.spaces import Box, Dict, Discrete
 from PIL import Image
 
-import time
-
-import vgamepad as vg
-
-import psutil
-
 assert platform.system().lower() == "windows", "This module is only supported on Windows."
-import win32process
-import win32gui
 import win32api
 import win32con
+import win32gui
+import win32process
 
 
 def get_process_info(process_name):
@@ -54,7 +50,8 @@ def get_process_info(process_name):
 
                     # On 64-bit Windows: WOW64 means "Windows 32-bit on Windows 64-bit", i.e. a 32-bit process
                     architecture = "x86" if is_wow64 else "x64"
-                except:
+                except Exception as e:
+                    print(f"Error getting architecture for process {pid}: {e}")
                     architecture = "unknown"
 
                 # Find windows associated with this PID
@@ -75,7 +72,8 @@ def get_process_info(process_name):
                 # Find all windows for this PID
                 try:
                     win32gui.EnumWindows(enum_window_callback, pid)
-                except:
+                except Exception as e:
+                    print(f"Error enumerating windows for PID {pid}: {e}")
                     pass
 
                 # Choose the best window
