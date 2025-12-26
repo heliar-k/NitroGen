@@ -106,8 +106,8 @@ print("Model loaded, starting environment...")
 for i in range(3):
     print(f"{3 - i}...")
     time.sleep(1)
-    
-FPS = 60
+
+FPS = 30
 
 env = GamepadEnv(
     game=args.pid if args.pid is not None else args.process,
