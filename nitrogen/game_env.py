@@ -38,24 +38,46 @@ def _patched_output_update_desc(self):
 dxcam.core.output.Output.update_desc = _patched_output_update_desc
 
 
-def get_process_info(process_name):
+def get_process_info(process_identifier):
     """
-    Get process information for a given process name on Windows.
+    Get process information for a given process name or PID on Windows.
 
     Args:
-        process_name (str): Name of the process (e.g., "isaac-ng.exe")
+        process_identifier (str or int): Name of the process (e.g., "isaac-ng.exe") or PID.
 
     Returns:
-        list: List of dictionaries containing PID, window_name, and architecture
-              for each matching process. Returns empty list if no process found.
+        dict: Dictionary containing PID, window_name, and architecture.
     """
     results = []
+    
+    # If the identifier is an integer (PID), search by PID directly
+    target_pid = None
+    target_name = None
+    
+    if isinstance(process_identifier, int):
+        target_pid = process_identifier
+    else:
+        # Try to parse as int just in case it's a string representation of a number
+        if str(process_identifier).isdigit():
+            target_pid = int(process_identifier)
+        else:
+            target_name = process_identifier.lower()
 
-    # Find all processes with the given name
+    # Iterate through processes
     for proc in psutil.process_iter(['pid', 'name']):
         try:
-            if proc.info['name'].lower() == process_name.lower():
+            # Check for match
+            match = False
+            if target_pid is not None:
+                if proc.info['pid'] == target_pid:
+                    match = True
+            elif target_name is not None:
+                if proc.info['name'].lower() == target_name:
+                    match = True
+            
+            if match:
                 pid = proc.info['pid']
+                process_name = proc.info['name']
 
                 # Get architecture
                 try:
@@ -125,9 +147,9 @@ def get_process_info(process_name):
             continue
 
     if len(results) == 0:
-        raise ValueError(f"No process found with name: {process_name}")
+        raise ValueError(f"No process found with identifier: {process_identifier}")
     elif len(results) > 1:
-        print(f"Warning: Multiple processes found with name '{process_name}'. Returning first match.")
+        print(f"Warning: Multiple processes found matching '{process_identifier}'. Returning first match.")
 
     return results[0]
 

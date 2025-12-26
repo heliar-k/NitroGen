@@ -27,7 +27,8 @@ from nitrogen.inference_viz import VideoRecorder, create_viz
 from nitrogen.shared import BUTTON_ACTION_TOKENS, PATH_REPO
 
 parser = argparse.ArgumentParser(description="VLM Inference")
-parser.add_argument("--process", type=str, default="celeste.exe", help="Game to play")
+parser.add_argument("--process", type=str, default="celeste.exe", help="Game to play (process name)")
+parser.add_argument("--pid", type=int, default=None, help="Game process ID (overrides --process)")
 parser.add_argument("--allow-menu", action="store_true", help="Allow menu actions (Disabled by default)")
 parser.add_argument("--host", type=str, default="localhost", help="Port for model server")
 parser.add_argument("--port", type=int, default=5555, help="Port for model server")
@@ -109,7 +110,7 @@ for i in range(3):
 FPS = 30
 
 env = GamepadEnv(
-    game=args.process,
+    game=args.pid if args.pid is not None else args.process,
     image_width=args.width,
     image_height=args.height,
     game_speed=1.0,
@@ -169,15 +170,15 @@ step_count = 0
 RECORD_DEBUG = not args.no_record_debug
 RECORD_CLEAN = not args.no_record_clean
 
-debug_ctx = VideoRecorder(str(PATH_MP4_DEBUG), fps=FPS, crf=32, preset="medium") if RECORD_DEBUG else dummy_recorder()
-clean_ctx = VideoRecorder(str(PATH_MP4_CLEAN), fps=FPS, crf=28, preset="medium") if RECORD_CLEAN else dummy_recorder()
+debug_ctx = VideoRecorder(str(PATH_MP4_DEBUG), fps=FPS, crf=32, preset="ultrafast") if RECORD_DEBUG else dummy_recorder()
+clean_ctx = VideoRecorder(str(PATH_MP4_CLEAN), fps=FPS, crf=28, preset="ultrafast") if RECORD_CLEAN else dummy_recorder()
 
 with debug_ctx as debug_recorder:
     with clean_ctx as clean_recorder:
         try:
             while True:
                 obs = preprocess_img(obs)
-                obs.save(PATH_DEBUG / f"{step_count:05d}.png")
+                # obs.save(PATH_DEBUG / f"{step_count:05d}.png")
 
                 pred = policy.predict(obs)
 
