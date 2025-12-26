@@ -4,11 +4,22 @@ import os
 import sys
 import time
 from collections import OrderedDict
+from contextlib import contextmanager
 from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
+
+
+@contextmanager
+def dummy_recorder():
+    """A no-op context manager that mimics VideoRecorder interface."""
+    class DummyRecorder:
+        def add_frame(self, frame):
+            pass
+    yield DummyRecorder()
+
 
 from nitrogen.game_env import GamepadEnv
 from nitrogen.inference_client import ModelClient
@@ -22,6 +33,8 @@ parser.add_argument("--host", type=str, default="localhost", help="Port for mode
 parser.add_argument("--port", type=int, default=5555, help="Port for model server")
 parser.add_argument("--width", type=int, default=None, help="Override capture width")
 parser.add_argument("--height", type=int, default=None, help="Override capture height")
+parser.add_argument("--no-record-debug", action="store_true", help="Disable debug video recording")
+parser.add_argument("--no-record-clean", action="store_true", help="Disable clean video recording")
 
 args = parser.parse_args()
 
@@ -92,13 +105,15 @@ print("Model loaded, starting environment...")
 for i in range(3):
     print(f"{3 - i}...")
     time.sleep(1)
+    
+FPS = 30
 
 env = GamepadEnv(
     game=args.process,
     image_width=args.width,
     image_height=args.height,
     game_speed=1.0,
-    env_fps=60,
+    env_fps=FPS,
     async_mode=True,
 )
 
@@ -151,8 +166,14 @@ obs, reward, terminated, truncated, info = env.step(action=zero_action)
 frames = None
 step_count = 0
 
-with VideoRecorder(str(PATH_MP4_DEBUG), fps=60, crf=32, preset="medium") as debug_recorder:
-    with VideoRecorder(str(PATH_MP4_CLEAN), fps=60, crf=28, preset="medium") as clean_recorder:
+RECORD_DEBUG = not args.no_record_debug
+RECORD_CLEAN = not args.no_record_clean
+
+debug_ctx = VideoRecorder(str(PATH_MP4_DEBUG), fps=FPS, crf=32, preset="medium") if RECORD_DEBUG else dummy_recorder()
+clean_ctx = VideoRecorder(str(PATH_MP4_CLEAN), fps=FPS, crf=28, preset="medium") if RECORD_CLEAN else dummy_recorder()
+
+with debug_ctx as debug_recorder:
+    with clean_ctx as clean_recorder:
         try:
             while True:
                 obs = preprocess_img(obs)
@@ -177,11 +198,11 @@ with VideoRecorder(str(PATH_MP4_DEBUG), fps=60, crf=32, preset="medium") as debu
                     move_action["AXIS_LEFTY"] = np.array([int(yl * 32767)], dtype=np.long)
                     move_action["AXIS_RIGHTX"] = np.array([int(xr * 32767)], dtype=np.long)
                     move_action["AXIS_RIGHTY"] = np.array([int(yr * 32767)], dtype=np.long)
-                    
+
                     button_vector = buttons[i]
                     assert len(button_vector) == len(TOKEN_SET), "Button vector length does not match token set length"
 
-                    
+
                     for name, value in zip(TOKEN_SET, button_vector):
                         if "TRIGGER" in name:
                             move_action[name] =  np.array([value * 255], dtype=np.long)
