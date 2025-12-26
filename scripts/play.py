@@ -107,7 +107,7 @@ for i in range(3):
     print(f"{3 - i}...")
     time.sleep(1)
     
-FPS = 30
+FPS = 60
 
 env = GamepadEnv(
     game=args.pid if args.pid is not None else args.process,
