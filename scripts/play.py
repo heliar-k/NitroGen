@@ -1,28 +1,29 @@
+import argparse
+import json
 import os
 import sys
 import time
-import json
-from pathlib import Path
 from collections import OrderedDict
+from pathlib import Path
 
 import cv2
 import numpy as np
 from PIL import Image
 
 from nitrogen.game_env import GamepadEnv
-from nitrogen.shared import BUTTON_ACTION_TOKENS, PATH_REPO
-from nitrogen.inference_viz import create_viz, VideoRecorder
 from nitrogen.inference_client import ModelClient
+from nitrogen.inference_viz import VideoRecorder, create_viz
+from nitrogen.shared import BUTTON_ACTION_TOKENS, PATH_REPO
 
-import argparse
 parser = argparse.ArgumentParser(description="VLM Inference")
 parser.add_argument("--process", type=str, default="celeste.exe", help="Game to play")
 parser.add_argument("--allow-menu", action="store_true", help="Allow menu actions (Disabled by default)")
+parser.add_argument("--host", type=str, default="localhost", help="Port for model server")
 parser.add_argument("--port", type=int, default=5555, help="Port for model server")
 
 args = parser.parse_args()
 
-policy = ModelClient(port=args.port)
+policy = ModelClient(host=args.host, port=args.port)
 policy.reset()
 policy_info = policy.info()
 action_downsample_ratio = policy_info["action_downsample_ratio"]
