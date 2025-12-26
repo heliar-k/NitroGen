@@ -350,12 +350,12 @@ class PyautoguiScreenshotBackend:
 class DxcamScreenshotBackend:
     def __init__(self, bbox_ltrb, fps):
         import dxcam
-        self.camera = dxcam.create()
         self.bbox_ltrb = bbox_ltrb
         self.width = bbox_ltrb[2] - bbox_ltrb[0]
         self.height = bbox_ltrb[3] - bbox_ltrb[1]
+        self.camera = dxcam.create(region=bbox_ltrb)
         self.last_screenshot = None
-        self.camera.start(region=self.bbox_ltrb, target_fps=fps, video_mode=True)
+        self.camera.start(target_fps=fps, video_mode=True)
 
     def screenshot(self):
         screenshot = self.camera.get_latest_frame()
