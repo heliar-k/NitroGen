@@ -1,3 +1,4 @@
+import ctypes
 import platform
 import time
 
@@ -16,6 +17,25 @@ import win32api
 import win32con
 import win32gui
 import win32process
+
+
+# Patch dxcam Output.update_desc to handle DPI scaling issues as suggested in 
+# https://github.com/ra1nty/DXcam/issues/107#issuecomment-3027333497
+def _patched_output_update_desc(self):
+    from dxcam._libs.dxgi import DXGI_OUTPUT_DESC
+    if self.desc is None:
+        self.desc = DXGI_OUTPUT_DESC()
+    self.output.GetDesc(ctypes.byref(self.desc))
+    HORZRES = 8
+    VERTRES = 10
+    hdc = ctypes.windll.user32.GetDC(None)
+    width = ctypes.windll.gdi32.GetDeviceCaps(hdc, HORZRES)
+    height = ctypes.windll.gdi32.GetDeviceCaps(hdc, VERTRES)
+    ctypes.windll.user32.ReleaseDC(None, hdc)
+    self.desc.DesktopCoordinates.right = ctypes.c_long(width)
+    self.desc.DesktopCoordinates.bottom = ctypes.c_long(height)
+
+dxcam.core.output.Output.update_desc = _patched_output_update_desc
 
 
 def get_process_info(process_name):
